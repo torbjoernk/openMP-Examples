@@ -1,3 +1,6 @@
 *~
 *swap
 *.prev-astyle
+dotprod_omp
+*kate-swp
+vector_add
