@@ -1,6 +1,11 @@
 *~
 *swap
 *.prev-astyle
-dotprod_omp
 *kate-swp
+.kdev4
+*.kdev4
+.settings
+.cproject
+.project
+dotprod_omp
 vector_add
