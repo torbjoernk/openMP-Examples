@@ -9,3 +9,4 @@
 .project
 dotprod_omp
 vector_add
+matxvec_sparse
