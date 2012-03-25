@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 2.8)
+project(my_openmp_examples)
+
+set(targetOptions "dotprod, matxvec_sparse, vector_add")
+
+include(FindOpenMP)
+if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+
+  if(${TARGET} STREQUAL "dotprod")
+    add_subdirectory(dotprod)
+  elseif(${TARGET} STREQUAL "matxvec_sparse")
+    add_subdirectory(matxvec_sparse)
+  elseif(${TARGET} STREQUAL "vector_add")
+    add_subdirectory(vector_add)
+  elseif(${TARGET} STREQUAL "all")
+    add_subdirectory(dotprod)
+    add_subdirectory(matxvec_sparse)
+    add_subdirectory(vector_add)
+  else()
+    message("ERROR: Please specify TARGET: 'all', 'dotprod', 'matxvec_sparse', 'vector_add'\n")
+  endif()
+else(OPENMP_FOUND)
+  message("ERROR: OpenMP could not be found.\n")
+endif(OPENMP_FOUND)
+

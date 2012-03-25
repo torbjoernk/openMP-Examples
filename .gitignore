@@ -7,6 +7,5 @@
 .settings
 .cproject
 .project
-dotprod_omp
-vector_add
-matxvec_sparse
+/build
+Makefile
