@@ -3,6 +3,15 @@ project(my_openmp_examples)
 
 set(targetOptions "dotprod, matxvec_sparse, vector_add")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
+if(DEBUG)
+  message("Debug is on")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb3")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb3")
+endif(DEBUG)
+
 include(FindOpenMP)
 if(OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -20,9 +29,9 @@ if(OPENMP_FOUND)
     add_subdirectory(matxvec_sparse)
     add_subdirectory(vector_add)
   else()
-    message("ERROR: Please specify TARGET: 'all', 'dotprod', 'matxvec_sparse', 'vector_add'\n")
+    message("ERROR: Please specify TARGET: 'all', 'dotprod', 'matxvec_sparse', 'vector_add'")
   endif()
 else(OPENMP_FOUND)
-  message("ERROR: OpenMP could not be found.\n")
+  message("ERROR: OpenMP could not be found.")
 endif(OPENMP_FOUND)
 

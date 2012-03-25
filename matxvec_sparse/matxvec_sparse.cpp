@@ -3,13 +3,18 @@
 #include <time.h>
 #include "omp.h"
 
-#define N_COL 5000
-#define N_ROW 4000
-#define NNZ 6000
+#define N_COL 5
+#define N_ROW 4
+#define NNZ 6
 
 void printSparseMat ( double val[], int colInd[], int rowPt[] );
 void printVec ( double val[], int size );
+void mxv ( double * __restrict__ aval, int * __restrict__ acolind, int * __restrict__ arowpt,
+           double * __restrict__ vval, double * __restrict__ yval );
 
+/**
+ * 
+ */
 int main( int argn, char *arg[] )
 {
   srand( 123 );
@@ -21,62 +26,80 @@ int main( int argn, char *arg[] )
   std::cout << "Number Non-Zeros:    " << NNZ << std::endl;
   std::cout << "Max Number Threads:  " << omp_get_max_threads() << std::endl;
   
-  // allocate memory
-  // ... for matrix
+  // allocate some memory
+  // ... for matrix and fill it with random values
   double Aval[NNZ];
   int AcolInd[NNZ];
   for ( int i = 0; i < NNZ; i++ ) {
-    Aval[i] = rand() % 50 + 1;
+    Aval[i] = rand() % 5 + 1;
     AcolInd[i] = rand() % N_COL;
   }
   int ArowPt[N_ROW];
   ArowPt[0] = 0;
-  for ( int i = 1; i < NNZ; i++ ) {
+  for ( int i = 1; i < N_ROW; i++ ) {
     ArowPt[i] = rand() % (NNZ - ArowPt[i-1] - (N_ROW - i)) + ArowPt[i-1] + 1;
   }
   
-  // ... for vector
+  // ... for vector and fill it with random, non-zero, values
   double Vval[N_COL];
   for ( int i = 0; i < N_COL; i++ ) {
-    Vval[i] = rand() % 50 + 1;
+    Vval[i] = rand() % 5 + 1;
   }
   
-  // ... for result
+  // ... for result and make sure, it's zero everywhere
   double Yval[N_ROW];
+  for ( int i = 0; i < N_ROW; i++ ) {
+    Yval[i] = 0;
+  }
   
-  // print input
+  // print input if dimenions not too high
   if ( N_COL < 10 && N_ROW < 10 && NNZ < 15 ) {
     printSparseMat( Aval, AcolInd, ArowPt );
     printVec( Vval, N_COL );
   }
   
-  // multiply
-  int x, y = 0;
-#pragma omp parallel for \
-  default(none) \
-  shared(Aval, AcolInd, ArowPt, Vval, Yval) \
-  private(x, y) \
-  schedule(static)
-  for ( x = 0; x < N_ROW; x++ ) {
-    Yval[x] = 0;
-    for ( y = ArowPt[x]; y < ArowPt[x+1]; y++ ) {
-      Yval[x] += Aval[y] * Vval[ AcolInd[y]-1 ];
-    }
-  }
+  // multiply --- here we go!
+  mxv( Aval, AcolInd, ArowPt, Vval, Yval );
   
-  // print result
+  // print result if dimenions not too high
   if ( N_COL < 10 && N_ROW < 10 && NNZ < 15 ) {
     printVec( Yval, N_ROW );
-  } else {
-    double sqnorm = 0;
-    for ( int i = 0; i < N_ROW; i++ ) {
-      sqnorm += Yval[i] * Yval[i];
-    }
-    std::cout << "Squared Norm of Y is: " << sqnorm << std::endl;
   }
+  // print squared norm of solution vector as a measurement for correctness
+  double sqnorm = 0;
+  for ( int i = 0; i < N_ROW; i++ ) {
+    sqnorm += Yval[i] * Yval[i];
+  }
+  std::cout << "Squared Norm of Y is: " << sqnorm << std::endl;
 }
 
-void printSparseMat( double val[], double colInd[], double rowPt[] )
+void mxv(double * __restrict__ aval,
+         int * __restrict__ acolind,
+         int * __restrict__ arowpt,
+         double * __restrict__ vval,
+         double * __restrict__ yval)
+{
+  int x, y = 0;
+  #pragma omp parallel \
+    default(none) \
+    shared(aval, acolind, arowpt, vval, yval) \
+    private(x, y)
+  {
+    #pragma omp for \
+      schedule(static)
+    for ( x = 0; x < N_ROW; x++ ) {
+      yval[x] = 0;
+      for ( y = arowpt[x]; y < arowpt[x+1]; y++ ) {
+        yval[x] += aval[y] * vval[ acolind[y] ];
+      }
+    }
+  } /* end PARALLEL */
+}
+
+/**
+ * 
+ */
+void printSparseMat( double val[], int colInd[], int rowPt[] )
 {
   std::cout << "Sparse Matrix in CRS format:" << std::endl;
   std::cout << "\tValues:\t";
@@ -90,12 +113,15 @@ void printSparseMat( double val[], double colInd[], double rowPt[] )
   }
   
   std::cout << std::endl << "\tRowpt: \t";
-  for ( int i = 0; i < N_COL + 1; i++ ) {
+  for ( int i = 0; i < N_ROW; i++ ) {
     std::cout << rowPt[i] << "\t";
   }
   std::cout << std::endl;
 }
 
+/**
+ * 
+ */
 void printVec( double val[], int size )
 {
   std::cout << "Vector:" << std::endl;
