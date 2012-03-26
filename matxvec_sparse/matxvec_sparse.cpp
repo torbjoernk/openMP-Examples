@@ -4,9 +4,9 @@
 #include <boost/concept_check.hpp>
 #include "omp.h"
 
-#define N_COL 5
-#define N_ROW 4
-#define NNZ 7
+#define N_COL 50
+#define N_ROW 40
+#define NNZ 60
 
 void full2sparse( double *full, double *val, int *colInd, int *rowPt );
 void sparse2full( double *full, double *val, int *colInd, int *rowPt );
@@ -32,8 +32,12 @@ int main( int argn, char *arg[] )
   printf( "Number Non-Zeros:    %u\n", NNZ );
   printf( "Max Number Threads:  %u\n", omp_get_max_threads() );
 
-  test_sparse();
+  // this test uses hard-coded test values
+  if ( NNZ == 7 && N_ROW == 4 && N_COL == 5 ) {
+    test_sparse();
+  }
   
+  // this test is variable
   test_sparse_with_full();
 }
 
@@ -159,38 +163,35 @@ void test_sparse()
   printf( "\n*** Testing default sparse ...\n" );
   // allocate some memory
   // ... for matrix and fill it with random values
-  double Aval[NNZ] = {1.0, 3.0, 4.0, 2.0, 5.0, 2.0, 1.0};
-  int AcolInd[NNZ] = {1,   3,   2,   0,   4,   2,   3};
-  int ArowPt[N_ROW+1] = {0, 2, 3, 5, 7};
-  double Full[N_ROW*N_COL];
+  double Aval[7] = {1.0, 3.0, 4.0, 2.0, 5.0, 2.0, 1.0};
+  int AcolInd[7] = {1,   3,   2,   0,   4,   2,   3};
+  int ArowPt[4+1] = {0, 2, 3, 5, 7};
+  double Full[4*5];
   sparse2full(Full, Aval, AcolInd, ArowPt);
   
   // ... for vector and fill it with random, non-zero, values
-  double Vval[N_COL] = {1.0, 3.0, 4.0, 2.0, 3.0};
+  double Vval[5] = {1.0, 3.0, 4.0, 2.0, 3.0};
   
   // ... for result and make sure, it's zero everywhere
-  double Yval[N_ROW];
-  for ( int i = 0; i < N_ROW; i++ ) {
+  double Yval[4];
+  for ( int i = 0; i < 4; i++ ) {
     Yval[i] = 0;
   }
   
-  // print input if dimenions not too high
-  if ( N_COL < 10 && N_ROW < 10 && NNZ < 15 ) {
-    printSparseMat( Aval, AcolInd, ArowPt );
-    printFullMat( Full );
-    printVec( Vval, N_COL );
-  }
+  // print input
+  printSparseMat( Aval, AcolInd, ArowPt );
+  printFullMat( Full );
+  printVec( Vval, 5 );
   
   // multiply --- here we go!
   mxv( Aval, AcolInd, ArowPt, Vval, Yval );
   
-  // print result if dimenions not too high
-  if ( N_ROW < 10 ) {
-    printVec( Yval, N_ROW );
-  }
+  // print result
+  printVec( Yval, 4 );
+  
   // print squared norm of solution vector as a measurement for correctness
   double sqnorm = 0;
-  for ( int i = 0; i < N_ROW; i++ ) {
+  for ( int i = 0; i < 4; i++ ) {
     sqnorm += Yval[i] * Yval[i];
   }
   printf( "Squared Norm of Y is: % 10.2f\n", sqnorm );
