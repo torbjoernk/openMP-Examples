@@ -57,6 +57,8 @@ int main( int argn, char *args[] )
   
   // this test is variable
   test_sparse_with_full();
+  
+  return(0);
 }
 
 void mxv(double * __restrict__ aval,
