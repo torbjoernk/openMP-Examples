@@ -224,12 +224,12 @@ void test_sparse_with_full()
 {
   printf( "\n*** Testing random full ...\n" );
   // allocate memory
-  double Full[n_row*n_col];
-  double Aval[nnz];
-  int AcolInd[nnz];
-  int ArowPt[n_row+1];
-  double Vval[n_col];
-  double Yval[n_row];
+  double *Full = new double[n_row*n_col];
+  double *Aval = new double[nnz];
+  int *AcolInd = new int[nnz];
+  int *ArowPt = new int[n_row+1];
+  double *Vval = new double[n_col];
+  double *Yval = new double[n_row];
   
   if ( nnz < n_row ) {
     printf( "ERROR: n_row must not be bigger than nnz. Singularity matrix otherwise. (nnz=%u, n_row=%u)\n", nnz, n_row );
@@ -291,4 +291,12 @@ void test_sparse_with_full()
     sqnorm += Yval[i] * Yval[i];
   }
   printf( "Squared Norm of Y is: % 10.2f\n", sqnorm );
+  
+  // free memory
+  delete[] Full;
+  delete[] Aval;
+  delete[] AcolInd;
+  delete[] ArowPt;
+  delete[] Vval;
+  delete[] Yval;
 }
