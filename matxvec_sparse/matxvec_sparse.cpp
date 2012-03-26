@@ -4,9 +4,11 @@
 #include <boost/concept_check.hpp>
 #include "omp.h"
 
-#define N_COL 50
-#define N_ROW 40
-#define NNZ 60
+int n_col = 5;
+int n_row = 4;
+int nnz = 7;
+int n_threads = 2;
+int seed = 1234567;
 
 void full2sparse( double *full, double *val, int *colInd, int *rowPt );
 void sparse2full( double *full, double *val, int *colInd, int *rowPt );
@@ -21,19 +23,35 @@ void test_sparse_with_full();
 /**
  * 
  */
-int main( int argn, char *arg[] )
+int main( int argn, char *args[] )
 {
-  srand( 1234567 );
-  omp_set_num_threads(2);
+  switch (argn) {
+    case 6:
+      seed = atoi(args[5]);
+    case 5:
+      n_threads = atoi(args[4]);
+    case 4:
+      nnz = atoi(args[3]);
+    case 3:
+      n_row = atoi(args[2]);
+    case 2:
+      n_col = atoi(args[1]);
+    default:
+      break;
+  }
   
-  printf( "Number columns:      %u\n", N_COL );
-  printf( "Number rows:         %u\n", N_ROW );
-  printf( "Total Number Values: %u\n", N_ROW * N_COL );
-  printf( "Number Non-Zeros:    %u\n", NNZ );
+  srand( seed );
+  omp_set_num_threads(n_threads);
+  
+  printf( "Number columns:      %u\n", n_col );
+  printf( "Number rows:         %u\n", n_row );
+  printf( "Total Number Values: %u\n", n_row * n_col );
+  printf( "Number Non-Zeros:    %u\n", nnz );
   printf( "Max Number Threads:  %u\n", omp_get_max_threads() );
+  printf( "Random Seed:         %u\n", seed );
 
   // this test uses hard-coded test values
-  if ( NNZ == 7 && N_ROW == 4 && N_COL == 5 ) {
+  if ( nnz == 7 && n_row == 4 && n_col == 5 ) {
     test_sparse();
   }
   
@@ -51,12 +69,12 @@ void mxv(double * __restrict__ aval,
   int x, y = 0;
   #pragma omp parallel \
     default(none) \
-    shared(aval, acolind, arowpt, vval, yval) \
+    shared(n_row, aval, acolind, arowpt, vval, yval) \
     private(x, y)
   {
     #pragma omp for \
       schedule(static)
-    for ( x = 0; x < N_ROW; x++ ) {
+    for ( x = 0; x < n_row; x++ ) {
       yval[x] = 0;
 //       printf( "\nThread %u is doing row=%u (x=%u)\tarowpt[x]=%u\tarowpt[x+1]=%u", omp_get_thread_num(), x+1, x, arowpt[x], arowpt[x+1] );
       for ( y = arowpt[x]; y < arowpt[x+1]; y++ ) {
@@ -73,16 +91,16 @@ void mxv(double * __restrict__ aval,
  */
 void sparse2full( double *full, double *val, int *colInd, int *rowPt )
 {
-  for ( int row = 0; row < N_ROW; row++ ) {
+  for ( int row = 0; row < n_row; row++ ) {
     // fill everything with zeros
-    for ( int col = 0; col < N_COL; col++ ) {
-      full[ (row * N_COL) + col ] = 0;
+    for ( int col = 0; col < n_col; col++ ) {
+      full[ (row * n_col) + col ] = 0;
     }
     
 //     printf( "row=%u\tvalPt=[%u,%u)\n", row , rowPt[row], rowPt[row+1] );
     for ( int valPt = rowPt[row]; valPt < rowPt[row+1]; valPt++ ) {
 //       printf( "\tvalPt=%u\tcolInd=%u\tval=% 4.2f\n", valPt, colInd[valPt], val[valPt] );
-      full[ (row * N_COL) + colInd[valPt] ] = val[ valPt ];
+      full[ (row * n_col) + colInd[valPt] ] = val[ valPt ];
     }
   }
 }
@@ -93,17 +111,17 @@ void sparse2full( double *full, double *val, int *colInd, int *rowPt )
 void full2sparse( double *full, double *val, int *colInd, int *rowPt )
 {
   int curr_nnz = 0;
-  for ( int row = 0; row < N_ROW; row++ ) {
+  for ( int row = 0; row < n_row; row++ ) {
     rowPt[row] = curr_nnz;
-    for ( int col = 0; col < N_COL; col++ ) {
-      if ( full[ (row * N_COL) + col ] != 0.0 ) {
-        val[curr_nnz] = full[ (row * N_COL) + col ];
+    for ( int col = 0; col < n_col; col++ ) {
+      if ( full[ (row * n_col) + col ] != 0.0 ) {
+        val[curr_nnz] = full[ (row * n_col) + col ];
         colInd[curr_nnz] = col;
         curr_nnz++;
       }
     }
   }
-  rowPt[N_ROW] = NNZ;
+  rowPt[n_row] = nnz;
 }
 
 /**
@@ -112,9 +130,9 @@ void full2sparse( double *full, double *val, int *colInd, int *rowPt )
 void printFullMat( double *full )
 {
   printf( "Full Matrix:\n" );
-  for ( int row = 0; row < N_ROW; row++ ) {
-    for ( int col = 0; col < N_COL; col++ ) {
-      printf( "\t% 4.2f", full[ (row * N_COL) + col ] );
+  for ( int row = 0; row < n_row; row++ ) {
+    for ( int col = 0; col < n_col; col++ ) {
+      printf( "\t% 4.2f", full[ (row * n_col) + col ] );
     }
     printf( "\n" );
   }
@@ -127,17 +145,17 @@ void printSparseMat( double *val, int *colInd, int *rowPt )
 {
   printf( "Sparse Matrix in CRS format:\n" );
   printf( "\tValues:\t" );
-  for ( int i = 0; i < NNZ; i++ ) {
+  for ( int i = 0; i < nnz; i++ ) {
     printf( "% 4.2f\t", val[i] );
   }
   
   printf( "\n\tColInd:\t" );
-  for ( int i = 0; i < NNZ; i++ ) {
+  for ( int i = 0; i < nnz; i++ ) {
     printf( "%u\t", colInd[i] );
   }
   
   printf( "\n\tRowpt: \t" );
-  for ( int i = 0; i < N_ROW+1; i++ ) {
+  for ( int i = 0; i < n_row+1; i++ ) {
     printf( "%u\t", rowPt[i] );
   }
   printf( "\n" );
@@ -204,70 +222,70 @@ void test_sparse_with_full()
 {
   printf( "\n*** Testing random full ...\n" );
   // allocate memory
-  double Full[N_ROW*N_COL];
-  double Aval[NNZ];
-  int AcolInd[NNZ];
-  int ArowPt[N_ROW+1];
-  double Vval[N_COL];
-  double Yval[N_ROW];
+  double Full[n_row*n_col];
+  double Aval[nnz];
+  int AcolInd[nnz];
+  int ArowPt[n_row+1];
+  double Vval[n_col];
+  double Yval[n_row];
   
-  if ( NNZ < N_ROW ) {
-    printf( "ERROR: N_ROW must be bigger than NNZ. Singularity matrix otherwise. (NNZ=%u, N_ROW=%u)\n", NNZ, N_ROW );
+  if ( nnz < n_row ) {
+    printf( "ERROR: n_row must be bigger than nnz. Singularity matrix otherwise. (nnz=%u, n_row=%u)\n", nnz, n_row );
     exit( -1 );
   }
   
   // initialize full matrix
-  for ( int i = 0; i < N_COL*N_ROW; i++ ) {
+  for ( int i = 0; i < n_col*n_row; i++ ) {
     Full[i] = 0.0;
   }
   
   // fill full matrix with random values
   // ... first make sure, one value per row
-  for ( int row = 0; row < N_ROW; row++ ) {
-    int col = rand() % N_COL;
-    Full[ row*N_COL + col ] = rand() % 5 + 1;
+  for ( int row = 0; row < n_row; row++ ) {
+    int col = rand() % n_col;
+    Full[ row*n_col + col ] = rand() % 5 + 1;
   }
   // then the remaining
-  for ( int remaining_nnz = NNZ - N_ROW; remaining_nnz >= 0; remaining_nnz-- ) {
+  for ( int remaining_nnz = nnz - n_row; remaining_nnz >= 0; remaining_nnz-- ) {
     int row = 0, col = 0;
     bool already_nnz = true;
     while ( already_nnz ) {
-      row = rand() % N_ROW;
-      col = rand() % N_COL;
-      already_nnz = ( Full[ row*N_COL + col ] != 0 );
+      row = rand() % n_row;
+      col = rand() % n_col;
+      already_nnz = ( Full[ row*n_col + col ] != 0 );
     }
-    Full[ row*N_COL + col ] = rand() % 5 + 1;
+    Full[ row*n_col + col ] = rand() % 5 + 1;
   }
   // convert the full to a sparse
   full2sparse( Full, Aval, AcolInd, ArowPt );
   
   // fill the vector randomly
-  for ( int i = 0; i < N_COL; i++ ) {
+  for ( int i = 0; i < n_col; i++ ) {
     Vval[i] = rand() % 5 + 1;
   }
   
   // for result vector make sure, it's zero everywhere
-  for ( int i = 0; i < N_ROW; i++ ) {
+  for ( int i = 0; i < n_row; i++ ) {
     Yval[i] = 0;
   }
   
   // print input if dimenions not too high
-  if ( N_COL < 10 && N_ROW < 10 && NNZ < 15 ) {
+  if ( n_col < 10 && n_row < 10 && nnz < 15 ) {
     printFullMat( Full );
     printSparseMat( Aval, AcolInd, ArowPt );
-    printVec( Vval, N_COL );
+    printVec( Vval, n_col );
   }
   
   // multiply --- here we go!
   mxv( Aval, AcolInd, ArowPt, Vval, Yval );
   
   // print result if dimenions not too high
-  if ( N_ROW < 10 ) {
-    printVec( Yval, N_ROW );
+  if ( n_row < 10 ) {
+    printVec( Yval, n_row );
   }
   // print squared norm of solution vector as a measurement for correctness
   double sqnorm = 0;
-  for ( int i = 0; i < N_ROW; i++ ) {
+  for ( int i = 0; i < n_row; i++ ) {
     sqnorm += Yval[i] * Yval[i];
   }
   printf( "Squared Norm of Y is: % 10.2f\n", sqnorm );
