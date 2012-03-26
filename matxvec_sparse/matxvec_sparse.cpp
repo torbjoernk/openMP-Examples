@@ -7,6 +7,7 @@
 #define N_ROW 4
 #define NNZ 7
 
+void sparse2full( double *full, double *val, int *colInd, int *rowPt );
 void printSparseMat ( double val[], int colInd[], int rowPt[] );
 void printVec ( double val[], int size );
 void mxv ( double * __restrict__ aval, int * __restrict__ acolind, int * __restrict__ arowpt,
@@ -31,6 +32,8 @@ int main( int argn, char *arg[] )
   double Aval[NNZ] = {1.0, 3.0, 4.0, 2.0, 5.0, 2.0, 1.0};
   int AcolInd[NNZ] = {1,   3,   2,   0,   4,   2,   3};
   int ArowPt[N_ROW+1] = {0, 2, 3, 5, 6};
+  double Full[N_ROW*N_COL];
+  sparse2full(Full, Aval, AcolInd, ArowPt);
   
   // ... for vector and fill it with random, non-zero, values
   double Vval[N_COL] = {1.0, 3.0, 4.0, 2.0, 3.0};
@@ -44,6 +47,7 @@ int main( int argn, char *arg[] )
   // print input if dimenions not too high
   if ( N_COL < 10 && N_ROW < 10 && NNZ < 15 ) {
     printSparseMat( Aval, AcolInd, ArowPt );
+    printFullMat( Full );
     printVec( Vval, N_COL );
   }
   
@@ -92,7 +96,36 @@ void mxv(double * __restrict__ aval,
 /**
  * 
  */
-void printSparseMat( double val[], int colInd[], int rowPt[] )
+void sparse2full( double *full, double *val, int *colInd, int *rowPt )
+{
+  for ( int row = 0; row < N_ROW; row++ ) {
+    for ( int col = 0; col < N_COL; col++ ) {
+      full[ (row * N_COL) + col ] = 0;
+    }
+    for ( int col = rowPt[row]; col < rowPt[row+1]; col++) {
+      full[ (row * N_COL) + colInd[col] ] = val[col];
+    }
+  }
+}
+
+/**
+ * 
+ */
+void printFullMat( double *full )
+{
+  std::cout << "Full Matrix:" << std::endl;
+  for ( int row = 0; row < N_ROW; row++ ) {
+    for ( int col = 0; col < N_COL; col++ ) {
+      std::cout << "\t" << full[ (row * N_ROW) + col ];
+    }
+    std::cout << std::endl;
+  }
+}
+
+/**
+ * 
+ */
+void printSparseMat( double *val, int *colInd, int *rowPt )
 {
   std::cout << "Sparse Matrix in CRS format:" << std::endl;
   std::cout << "\tValues:\t";
@@ -115,7 +148,7 @@ void printSparseMat( double val[], int colInd[], int rowPt[] )
 /**
  * 
  */
-void printVec( double val[], int size )
+void printVec( double *val, int size )
 {
   std::cout << "Vector:" << std::endl;
   for ( int i = 0; i < size; i++ ) {
