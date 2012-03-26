@@ -1,4 +1,4 @@
-#include <iostream>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include "omp.h"
@@ -22,11 +22,11 @@ int main( int argn, char *arg[] )
   srand( 1234567 );
   omp_set_num_threads(2);
   
-  std::cout << "Number columns:      " << N_COL << std::endl;
-  std::cout << "Number rows:         " << N_ROW << std::endl;
-  std::cout << "Total Number Values: " << N_ROW * N_COL << std::endl;
-  std::cout << "Number Non-Zeros:    " << NNZ << std::endl;
-  std::cout << "Max Number Threads:  " << omp_get_max_threads() << std::endl;
+  printf( "Number columns:      %u\n", N_COL );
+  printf( "Number rows:         %u\n", N_ROW );
+  printf( "Total Number Values: %u\n", N_ROW * N_COL );
+  printf( "Number Non-Zeros:    %u\n", NNZ );
+  printf( "Max Number Threads:  %u\n", omp_get_max_threads() );
   
   // allocate some memory
   // ... for matrix and fill it with random values
@@ -64,7 +64,7 @@ int main( int argn, char *arg[] )
   for ( int i = 0; i < N_ROW; i++ ) {
     sqnorm += Yval[i] * Yval[i];
   }
-  std::cout << "Squared Norm of Y is: " << sqnorm << std::endl;
+  printf( "Squared Norm of Y is: % 10.2f\n", sqnorm );
 }
 
 void mxv(double * __restrict__ aval,
@@ -73,7 +73,7 @@ void mxv(double * __restrict__ aval,
          double * __restrict__ vval,
          double * __restrict__ yval)
 {
-  std::cout << "Multiplying ..." << std::endl;
+  printf( "Multiplying ...\n" );
   int x, y = 0;
   #pragma omp parallel \
     default(none) \
@@ -84,14 +84,14 @@ void mxv(double * __restrict__ aval,
       schedule(static)
     for ( x = 0; x < N_ROW; x++ ) {
       yval[x] = 0;
-//       printf("Thread %u is doing row=%u (x=%u)\tarowpt[x]=%u\tarowpt[x+1]=%u\n", omp_get_thread_num(), x+1, x, arowpt[x], arowpt[x+1]);
+//       printf( "Thread %u is doing row=%u (x=%u)\tarowpt[x]=%u\tarowpt[x+1]=%u\n", omp_get_thread_num(), x+1, x, arowpt[x], arowpt[x+1] );
       for ( y = arowpt[x]; y < arowpt[x+1]; y++ ) {
-//         printf("\t[x,y]=[%u,%u]: aval[y]=%f\tacolind[y]=%u\tvval[acolind[y]]=%f\n", x, y, aval[y], acolind[y], vval[acolind[y]]);
+//         printf( "\t[x,y]=[%u,%u]: aval[y]=% 4.2f\tacolind[y]=%u\tvval[acolind[y]]=% 4.2f\n", x, y, aval[y], acolind[y], vval[acolind[y]] );
         yval[x] += aval[y] * vval[ acolind[y] ];
       }
     }
   } /* end PARALLEL */
-  std::cout << "... done." << std::endl;
+  printf( "... done.\n" );
 }
 
 /**
@@ -107,7 +107,7 @@ void sparse2full( double *full, double *val, int *colInd, int *rowPt )
     
 //     printf( "row=%u\tvalPt=[%u,%u)\n", row , rowPt[row], ((row+1 < N_ROW) ? rowPt[row+1] : NNZ ));
     for ( int valPt = rowPt[row]; valPt < ((row+1 < N_ROW) ? rowPt[row+1] : NNZ ); valPt++ ) {
-//       printf( "\tvalPt=%u\tcolInd=%u\tval=%f\n", valPt, colInd[valPt], val[valPt] );
+//       printf( "\tvalPt=%u\tcolInd=%u\tval=% 4.2f\n", valPt, colInd[valPt], val[valPt] );
       full[ (row * N_COL) + colInd[valPt] ] = val[ valPt ];
     }
   }
@@ -118,12 +118,12 @@ void sparse2full( double *full, double *val, int *colInd, int *rowPt )
  */
 void printFullMat( double *full )
 {
-  std::cout << "Full Matrix:" << std::endl;
+  printf( "Full Matrix:\n" );
   for ( int row = 0; row < N_ROW; row++ ) {
     for ( int col = 0; col < N_COL; col++ ) {
-      std::cout << "\t" << full[ (row * N_COL) + col ];
+      printf( "\t% 4.2f", full[ (row * N_COL) + col ] );
     }
-    std::cout << std::endl;
+    printf( "\n" );
   }
 }
 
@@ -132,22 +132,22 @@ void printFullMat( double *full )
  */
 void printSparseMat( double *val, int *colInd, int *rowPt )
 {
-  std::cout << "Sparse Matrix in CRS format:" << std::endl;
-  std::cout << "\tValues:\t";
+  printf( "Sparse Matrix in CRS format:\n" );
+  printf( "\tValues:\t" );
   for ( int i = 0; i < NNZ; i++ ) {
-    std::cout << val[i] << "\t";
+    printf( "% 4.2f\t", val[i] );
   }
   
-  std::cout << std::endl << "\tColInd:\t";
+  printf( "\n\tColInd:\t" );
   for ( int i = 0; i < NNZ; i++ ) {
-    std::cout << colInd[i] << "\t";
+    printf( "%u\t", colInd[i] );
   }
   
-  std::cout << std::endl << "\tRowpt: \t";
+  printf( "\n\tRowpt: \t" );
   for ( int i = 0; i < N_ROW+1; i++ ) {
-    std::cout << rowPt[i] << "\t";
+    printf( "%u\t", rowPt[i] );
   }
-  std::cout << std::endl;
+  printf( "\n" );
 }
 
 /**
@@ -155,9 +155,9 @@ void printSparseMat( double *val, int *colInd, int *rowPt )
  */
 void printVec( double *val, int size )
 {
-  std::cout << "Vector:" << std::endl;
+  printf( "Vector:\b" );
   for ( int i = 0; i < size; i++ ) {
-    std::cout << "\t" << val[i];
+    printf( "\t% 4.2f", val[i] );
   }
-  std::cout << std::endl;
+  printf( "\n" );
 }
