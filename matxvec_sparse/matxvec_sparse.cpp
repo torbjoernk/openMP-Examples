@@ -8,6 +8,7 @@
 #define NNZ 7
 
 void sparse2full( double *full, double *val, int *colInd, int *rowPt );
+void printFullMat( double *full );
 void printSparseMat ( double val[], int colInd[], int rowPt[] );
 void printVec ( double val[], int size );
 void mxv ( double * __restrict__ aval, int * __restrict__ acolind, int * __restrict__ arowpt,
