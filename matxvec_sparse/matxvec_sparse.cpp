@@ -13,8 +13,8 @@ int seed = 1234567;
 void full2sparse( double *full, double *val, int *colInd, int *rowPt );
 void sparse2full( double *full, double *val, int *colInd, int *rowPt );
 void printFullMat( double *full );
-void printSparseMat( double val[], int colInd[], int rowPt[] );
-void printVec( double val[], int size );
+void printSparseMat( double *val, int *colInd, int *rowPt );
+void printVec( double *val, int size );
 void mxv( double * __restrict__ aval, int * __restrict__ acolind, int * __restrict__ arowpt,
           double * __restrict__ vval, double * __restrict__ yval );
 void test_sparse();
@@ -232,7 +232,7 @@ void test_sparse_with_full()
   double Yval[n_row];
   
   if ( nnz < n_row ) {
-    printf( "ERROR: n_row must be bigger than nnz. Singularity matrix otherwise. (nnz=%u, n_row=%u)\n", nnz, n_row );
+    printf( "ERROR: n_row must not be bigger than nnz. Singularity matrix otherwise. (nnz=%u, n_row=%u)\n", nnz, n_row );
     exit( -1 );
   }
   
