@@ -100,11 +100,15 @@ void mxv(double * __restrict__ aval,
 void sparse2full( double *full, double *val, int *colInd, int *rowPt )
 {
   for ( int row = 0; row < N_ROW; row++ ) {
+    // fill everything with zeros
     for ( int col = 0; col < N_COL; col++ ) {
       full[ (row * N_COL) + col ] = 0;
     }
-    for ( int col = rowPt[row]; col < rowPt[row+1]; col++) {
-      full[ (row * N_COL) + colInd[col] ] = val[col];
+    
+//     printf( "row=%u\tvalPt=[%u,%u)\n", row , rowPt[row], ((row+1 < N_ROW) ? rowPt[row+1] : NNZ ));
+    for ( int valPt = rowPt[row]; valPt < ((row+1 < N_ROW) ? rowPt[row+1] : NNZ ); valPt++ ) {
+//       printf( "\tvalPt=%u\tcolInd=%u\tval=%f\n", valPt, colInd[valPt], val[valPt] );
+      full[ (row * N_COL) + colInd[valPt] ] = val[ valPt ];
     }
   }
 }
@@ -117,7 +121,7 @@ void printFullMat( double *full )
   std::cout << "Full Matrix:" << std::endl;
   for ( int row = 0; row < N_ROW; row++ ) {
     for ( int col = 0; col < N_COL; col++ ) {
-      std::cout << "\t" << full[ (row * N_ROW) + col ];
+      std::cout << "\t" << full[ (row * N_COL) + col ];
     }
     std::cout << std::endl;
   }
