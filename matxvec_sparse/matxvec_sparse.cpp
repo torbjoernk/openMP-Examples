@@ -22,8 +22,8 @@ void sparse2full( double *full, double *val, int *colInd, int *rowPt );
 void printFullMat( double *full );
 void printSparseMat( double *val, int *colInd, int *rowPt );
 void printVec( double *val, int size );
-void mxv( double * __restrict__ aval, int * __restrict__ acolind, int * __restrict__ arowpt,
-          double * __restrict__ vval, double * __restrict__ yval );
+void mxv( double * __restrict aval, int * __restrict acolind, int * __restrict arowpt,
+          double * __restrict vval, double * __restrict yval );
 void test_sparse();
 void test_sparse_with_full();
 
@@ -68,11 +68,11 @@ int main( int argn, char *args[] )
   return(0);
 }
 
-void mxv(double * __restrict__ aval,
-         int * __restrict__ acolind,
-         int * __restrict__ arowpt,
-         double * __restrict__ vval,
-         double * __restrict__ yval)
+void mxv(double * __restrict aval,
+         int * __restrict acolind,
+         int * __restrict arowpt,
+         double * __restrict vval,
+         double * __restrict yval)
 {
   printf( "Multiplying ..." );
   int x, y = 0;
